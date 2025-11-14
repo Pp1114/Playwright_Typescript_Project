@@ -228,7 +228,7 @@ This project is open source and available under the MIT License.
 
 ## 🙏 Acknowledgments
 
-- Built with [Claude Code](https://claude.com/claude-code)
+- Built with assistance of [Claude Code](https://claude.com/claude-code)
 - Test site: [automationexercise.com](https://automationexercise.com)
 
 ---
