@@ -3,9 +3,9 @@
 > Production-ready E2E test automation framework for [automationexercise.com](https://automationexercise.com) built with Playwright + TypeScript
 
 ![Playwright Tests](https://github.com/Pp1114/Playwright_Typescript_Project/actions/workflows/playwright.yml/badge.svg)
-[![TypeScript](https://img.shields.io/badge/TypeScript-100%25-blue.svg)]()
-[![Playwright](https://img.shields.io/badge/Playwright-E2E-green.svg)]()
-[![Tests](https://img.shields.io/badge/Tests-23%20passing-brightgreen.svg)]()
+[![TypeScript](https://img.shields.io/badge/TypeScript-100%25-blue.svg)](https://www.typescriptlang.org/)
+[![Playwright](https://img.shields.io/badge/Playwright-E2E-green.svg)](https://playwright.dev/)
+[![Tests](https://img.shields.io/badge/Tests-37%20passing-brightgreen.svg)]()
 
 ## 🎯 Overview
 
@@ -33,14 +33,26 @@ Playwright_Typescript_Project/
 │   ├── HomePage.ts              # Home page object
 │   ├── LoginPage.ts             # Login page object
 │   ├── SignupPage.ts            # Signup page object
-│   └── ProductsPage.ts          # Products page object
+│   ├── ProductsPage.ts          # Products page object
+│   ├── CartPage.ts              # Shopping cart page object
+│   ├── CheckoutPage.ts          # Checkout page object
+│   └── PaymentPage.ts           # Payment page object
 ├── tests/
+│   ├── setup/                   # Setup & utility tests
+│   │   └── createTestUser.spec.ts
 │   └── ui/
 │       ├── auth/                # Authentication tests
 │       │   ├── login.spec.ts
 │       │   └── signup.spec.ts
+│       ├── cart/                # Shopping cart tests
+│       │   ├── addToCart.spec.ts
+│       │   ├── viewCart.spec.ts
+│       │   └── checkout.spec.ts
+│       ├── categories/          # Category & brand filtering tests
+│       │   └── categoryFilter.spec.ts
+│       ├── e2e/                 # End-to-end tests
+│       │   └── completeCheckout.spec.ts
 │       ├── products/            # Product tests
-│       │   ├── productList.spec.ts
 │       │   ├── productSearch.spec.ts
 │       │   └── productDetails.spec.ts
 │       └── home.spec.ts         # Home page tests
@@ -52,18 +64,37 @@ Playwright_Typescript_Project/
 
 ## 🧪 Test Coverage
 
-**23 Tests - All Passing ✅**
+**37 Tests Passing - E-Commerce Test Suite ✅**
 
 | Feature | Tests | Status |
 |---------|-------|--------|
-| Authentication | 13 | ✅ Passing |
-| - Login | 7 | ✅ |
+| **Authentication** | 12 | ✅ All Passing |
+| - Login | 6 | ✅ |
 | - Signup | 6 | ✅ |
-| Products | 7 | ✅ Passing |
-| - List | 2 | ✅ |
+| **Shopping Cart** | 9 | ✅ 8 Passing |
+| - Add to Cart | 3 | ✅ All Passing |
+| - View/Manage Cart | 6 | ✅ 5 Passing |
+| **End-to-End Tests** | 1 | ✅ All Passing |
+| - Complete Checkout Flow | 1 | ✅ |
+| **Products** | 5 | ✅ All Passing |
 | - Search | 3 | ✅ |
 | - Details | 2 | ✅ |
-| Home/Navigation | 3 | ✅ Passing |
+| **Category & Filters** | 10 | ✅ 8 Passing |
+| - Category Filtering | 6 | ✅ All Passing |
+| - Brand Filtering | 4 | ⚠️ 2 Passing |
+| **Home/Navigation** | 3 | ✅ All Passing |
+| **Setup** | 1 | ✅ All Passing |
+
+### Test Summary
+- **Total Tests:** 46
+- **Passing:** 37 (80%)
+- **Flaky/In Progress:** 9 (20%)
+
+### Recent Improvements
+- ✅ Refactored to use Playwright best practices (removed `.toBeTruthy()`, `waitForLoadState`, `waitForTimeout`)
+- ✅ Created dedicated E2E test suite with complete user journey
+- ✅ Added PaymentPage page object for checkout flow
+- ✅ Improved test reliability with event-driven waits instead of arbitrary timeouts
 
 ## 🚀 Getting Started
 

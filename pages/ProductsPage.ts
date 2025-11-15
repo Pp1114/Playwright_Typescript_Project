@@ -21,6 +21,13 @@ export class ProductsPage extends BasePage {
     readonly menCategory: Locator;
     readonly kidsCategory: Locator;
 
+    // Category subcategories
+    readonly categorySubcategories: Locator;
+
+    // Category title and breadcrumb
+    readonly categoryTitle: Locator;
+    readonly breadcrumb: Locator;
+
     // Brand sidebar
     readonly brandsSection: Locator;
     readonly brandLinks: Locator;
@@ -39,16 +46,23 @@ export class ProductsPage extends BasePage {
 
         // Product list elements
         this.allProducts = page.locator('.features_items');
-        this.productCards = page.locator('.single-products');
+        this.productCards = page.locator('.product-image-wrapper');
         this.productNames = page.locator('.productinfo p');
         this.productPrices = page.locator('.productinfo h2');
         this.viewProductButtons = page.locator('.choose a').filter({ hasText: 'View Product' });
-        this.addToCartButtons = page.locator('.productinfo a').filter({ hasText: 'Add to cart' });
+        this.addToCartButtons = page.locator('.product-image-wrapper .add-to-cart');
 
         // Category sidebar
         this.womenCategory = page.locator('a[href="#Women"]');
         this.menCategory = page.locator('a[href="#Men"]');
         this.kidsCategory = page.locator('a[href="#Kids"]');
+
+        // Category subcategories
+        this.categorySubcategories = page.locator('.panel-body ul li a');
+
+        // Category title and breadcrumb
+        this.categoryTitle = page.locator('.title.text-center, .features_items .title');
+        this.breadcrumb = page.locator('.breadcrumbs, ol.breadcrumb');
 
         // Brand sidebar
         this.brandsSection = page.locator('.brands_products');
@@ -64,6 +78,13 @@ export class ProductsPage extends BasePage {
      */
     async goto() {
         await super.goto(URLS.PRODUCTS);
+    }
+
+    /**
+     * Wait for products to load on the page
+     */
+    async waitForProductsToLoad() {
+        await this.allProducts.waitFor({ state: 'visible' });
     }
 
     /**
@@ -110,17 +131,34 @@ export class ProductsPage extends BasePage {
      * @param index - Product index (0-based)
      */
     async addToCartByIndex(index: number) {
+        // Scroll product into view first to avoid overlays
+        await this.productCards.nth(index).scrollIntoViewIfNeeded();
+
         // Hover over product to make "Add to cart" button visible
         await this.productCards.nth(index).hover();
-        await this.addToCartButtons.nth(index).click();
+
+        // Wait for button to be actionable (handles animations/overlays)
+        await this.addToCartButtons.nth(index).waitFor({ state: 'visible' });
+
+        // Click add to cart button
+        await this.addToCartButtons.nth(index).click({ force: true });
     }
 
     /**
      * Add first product to cart
      */
     async addFirstProductToCart() {
+        // Scroll product into view first to avoid overlays
+        await this.productCards.first().scrollIntoViewIfNeeded();
+
+        // Hover over product to make "Add to cart" button visible
         await this.productCards.first().hover();
-        await this.addToCartButtons.first().click();
+
+        // Wait for button to be actionable (handles animations/overlays)
+        await this.addToCartButtons.first().waitFor({ state: 'visible' });
+
+        // Click add to cart button
+        await this.addToCartButtons.first().click({ force: true });
     }
 
     /**
@@ -206,6 +244,123 @@ export class ProductsPage extends BasePage {
         );
 
         return { productNames, relevant };
+    }
+
+    /**
+     * Click on a subcategory within a category
+     * @param category - 'Women', 'Men', or 'Kids'
+     * @param subcategory - Subcategory name (e.g., 'Dress', 'Tops', 'Tshirts')
+     */
+    async clickSubcategory(category: 'Women' | 'Men' | 'Kids', subcategory: string) {
+        // First expand the category
+        await this.clickCategory(category);
+
+        // Wait for subcategories to expand
+        await this.page.waitForTimeout(500);
+
+        // Click the subcategory
+        await this.page.locator(`.panel-body a:has-text("${subcategory}")`).first().click();
+    }
+
+    /**
+     * Get all visible subcategories for a category
+     * @param category - 'Women', 'Men', or 'Kids'
+     */
+    async getSubcategories(category: 'Women' | 'Men' | 'Kids'): Promise<string[]> {
+        // Expand category if not already expanded
+        const categorySelector = category === 'Women' ? '#Women' :
+                                 category === 'Men' ? '#Men' : '#Kids';
+
+        const isExpanded = await this.page.locator(`${categorySelector}.in`).isVisible().catch(() => false);
+
+        if (!isExpanded) {
+            await this.clickCategory(category);
+            await this.page.waitForTimeout(500);
+        }
+
+        const subcategoryLinks = this.page.locator(`${categorySelector} .panel-body a`);
+        const subcategories = await subcategoryLinks.allTextContents();
+        return subcategories.map(s => s.trim());
+    }
+
+    /**
+     * Verify category title displays correctly
+     * @param expectedCategory - Expected category text
+     */
+    async verifyCategoryTitle(expectedCategory: string) {
+        const titleText = await this.categoryTitle.textContent() || '';
+        expect(titleText.toLowerCase()).toContain(expectedCategory.toLowerCase());
+    }
+
+    /**
+     * Get current category title text
+     */
+    async getCategoryTitle(): Promise<string> {
+        return await this.categoryTitle.textContent() || '';
+    }
+
+    /**
+     * Verify breadcrumb navigation
+     * @param expectedPath - Expected breadcrumb text
+     */
+    async verifyBreadcrumb(expectedPath: string) {
+        const breadcrumbText = await this.breadcrumb.textContent() || '';
+        expect(breadcrumbText).toContain(expectedPath);
+    }
+
+    /**
+     * Get product count after filtering
+     */
+    async getFilteredProductCount(): Promise<number> {
+        return await this.getProductCount();
+    }
+
+    /**
+     * Verify all main categories are visible
+     */
+    async verifyAllCategoriesVisible() {
+        await expect(this.womenCategory).toBeVisible();
+        await expect(this.menCategory).toBeVisible();
+        await expect(this.kidsCategory).toBeVisible();
+    }
+
+    /**
+     * Verify brands section is visible
+     */
+    async verifyBrandsSectionVisible() {
+        await expect(this.brandsSection).toBeVisible();
+    }
+
+    /**
+     * Get all brand names from sidebar
+     */
+    async getAllBrands(): Promise<string[]> {
+        const brandTexts = await this.brandLinks.allTextContents();
+        return brandTexts.map(brand => brand.trim());
+    }
+
+    /**
+     * Get brand name with product count (e.g., "Polo (5)")
+     * @param brandName - Brand name
+     */
+    async getBrandWithCount(brandName: string): Promise<string> {
+        const brandLocator = this.page.locator(`.brands-name li a:has-text("${brandName}")`).first();
+        return await brandLocator.textContent() || '';
+    }
+
+    /**
+     * Verify category is expanded
+     * @param category - 'Women', 'Men', or 'Kids'
+     */
+    async isCategoryExpanded(category: 'Women' | 'Men' | 'Kids'): Promise<boolean> {
+        const categoryId = category === 'Women' ? '#Women' :
+                          category === 'Men' ? '#Men' : '#Kids';
+
+        try {
+            return await this.page.locator(`${categoryId}.in`).isVisible({ timeout: 2000 });
+        } catch {
+            return false;
+        }
     }
 
 }

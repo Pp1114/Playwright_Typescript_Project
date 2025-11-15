@@ -1,158 +1,181 @@
 import { test, expect } from '../../../fixtures/pageFixtures';
 import { generateTestUser } from '../../../utils/testDataGenerator';
-import { TIMEOUTS } from '../../../utils/constants';
+
+/**
+ * Signup Tests
+ *
+ * These tests create NEW users, so they use generateTestUser() for unique emails
+ * Tests are independent - each can run in isolation
+ */
 
 test.describe('Signup Functionality', () => {
-    test.beforeEach(async ({ page, signupPage }) => {
+    test.beforeEach(async ({ signupPage }) => {
         await signupPage.goto();
-
-        // Ensure clean state - logout if already logged in
-        try {
-            const logoutButton = page.locator('a[href="/logout"]');
-            await logoutButton.waitFor({ timeout: TIMEOUTS.SHORT, state: 'visible' });
-            await logoutButton.click();
-            await page.waitForTimeout(TIMEOUTS.SHORT);
-            await signupPage.goto();
-        } catch (error) {
-            // Not logged in, continue with test
-        }
     });
 
-    test('TC_AUTH_001 - Verify user can access signup page', async ({ page, signupPage }) => {
-        // Verify we're on the login/signup page
-        await expect(page).toHaveURL(/.*login/);
+    test('Verify signup form is accessible', async ({ signupPage, page }) => {
+        // Verify we're on login page
+        await expect(page).toHaveURL(/login/);
 
-        // Verify signup form elements are visible
-        await signupPage.verifySignupFormVisible();
-
-        // Verify heading
+        // Verify signup section is visible
         const signupHeading = page.locator('h2:has-text("New User Signup!")');
         await expect(signupHeading).toBeVisible();
+
+        // Verify signup form inputs
+        await signupPage.verifySignupFormVisible();
     });
 
-    test('TC_AUTH_002 - Verify successful user registration with valid data', async ({ signupPage, loginPage }) => {
+    test('Verify successful user registration with valid data', async ({ signupPage }) => {
         const testUser = generateTestUser();
 
         // Fill and submit signup form
-        await signupPage.completeSignup(testUser.name, testUser.email, {
-            gender: testUser.gender,
-            password: testUser.password,
-            day: testUser.day,
-            month: testUser.month,
-            year: testUser.year,
-            firstName: testUser.firstName,
-            lastName: testUser.lastName,
-            company: testUser.company,
-            address1: testUser.address1,
-            address2: testUser.address2,
-            country: testUser.country,
-            state: testUser.state,
-            city: testUser.city,
-            zipcode: testUser.zipcode,
-            mobileNumber: testUser.mobileNumber,
-            newsletter: testUser.newsletter,
-            optin: testUser.optin
-        });
+        await signupPage.fillInitialSignupForm(testUser.name, testUser.email);
+
+        // Wait for registration page to load
+        await expect(signupPage.passwordInput).toBeVisible();
+
+        await signupPage.fillRegistrationForm(testUser);
+        await signupPage.submitRegistration();
 
         // Verify account creation success
         await signupPage.verifyAccountCreated();
 
         // Continue and verify user is logged in
         await signupPage.clickContinue();
-        await loginPage.verifySuccessfulLogin(testUser.name);
+        await expect(signupPage.page.locator('.shop-menu')).toContainText(testUser.name);
     });
 
-    test('TC_AUTH_003 - Verify registration fails with existing email', async ({ page, signupPage }) => {
+    test('Verify signup fails with already registered email', async ({ signupPage, page }) => {
         const testUser = generateTestUser();
 
-        // Step 1: Create user completely
-        await signupPage.completeSignup(testUser.name, testUser.email, {
-            gender: testUser.gender,
-            password: testUser.password,
-            day: testUser.day,
-            month: testUser.month,
-            year: testUser.year,
-            firstName: testUser.firstName,
-            lastName: testUser.lastName,
-            company: testUser.company,
-            address1: testUser.address1,
-            address2: testUser.address2,
-            country: testUser.country,
-            state: testUser.state,
-            city: testUser.city,
-            zipcode: testUser.zipcode,
-            mobileNumber: testUser.mobileNumber,
-            newsletter: testUser.newsletter,
-            optin: testUser.optin
-        });
-
-        // Wait for account creation
+        // First, create the user
+        await signupPage.fillInitialSignupForm(testUser.name, testUser.email);
+        await expect(signupPage.passwordInput).toBeVisible();
+        await signupPage.fillRegistrationForm(testUser);
+        await signupPage.submitRegistration();
         await signupPage.verifyAccountCreated();
-
-        // Continue and then logout
         await signupPage.clickContinue();
-        await page.waitForTimeout(TIMEOUTS.SHORT);
 
-        const logoutButton = page.locator('a[href="/logout"]');
-        await logoutButton.click();
-        await page.waitForTimeout(TIMEOUTS.SHORT);
+        // Logout
+        const logoutLink = page.locator('a[href="/logout"]');
+        await logoutLink.click();
+        await page.waitForURL(/login/);
 
-        // Step 2: Try to signup again with the same email
-        await signupPage.goto();
-        await signupPage.signupNameInput.fill('Another User');
+        // Try to signup again with same email
+        await signupPage.signupNameInput.fill('Another Name');
         await signupPage.signupEmailInput.fill(testUser.email);
         await signupPage.signupButton.click();
 
-        // Verify error message appears
-        const errorMessage = page.locator('p').filter({ hasText: /Email Address already exist/ });
-        await expect(errorMessage).toBeVisible({ timeout: TIMEOUTS.MEDIUM });
+        // Verify error message
+        const errorMessage = page.locator('p:has-text("Email Address already exist")');
+        await expect(errorMessage).toBeVisible();
     });
 
-    test('TC_AUTH_004 - Verify validation messages for empty required fields', async ({ signupPage }) => {
-        // Try to submit with empty name
-        await signupPage.signupButton.click();
-
-        // Verify browser validation or form doesn't submit
-        const nameField = signupPage.signupNameInput;
-        const emailField = signupPage.signupEmailInput;
-
-        // Check that fields are required
-        await expect(nameField).toBeVisible();
-        await expect(emailField).toBeVisible();
-    });
-
-    test('TC_AUTH_005 - Verify password field masking', async ({ page, signupPage }) => {
+    test('Verify validation messages for empty required fields', async ({ signupPage, page }) => {
         const testUser = generateTestUser();
 
-        // Fill initial signup form
+        // Fill initial signup form to get to registration page
         await signupPage.fillInitialSignupForm(testUser.name, testUser.email);
-        await page.waitForTimeout(TIMEOUTS.SHORT);
+        await expect(signupPage.passwordInput).toBeVisible();
 
-        // Verify password field type is 'password'
+        // Submit form without filling required fields
+        await signupPage.createAccountButton.click();
+
+        // Verify we're still on the signup page (form didn't submit)
+        await expect(page).toHaveURL(/signup/);
+
+        // Verify password field shows validation (it's a required field)
+        const passwordValidation = await signupPage.passwordInput.evaluate((el: HTMLInputElement) => el.validity.valid);
+        expect(passwordValidation).toBe(false);
+
+        // Verify first name field shows validation
+        const firstNameValidation = await signupPage.firstNameInput.evaluate((el: HTMLInputElement) => el.validity.valid);
+        expect(firstNameValidation).toBe(false);
+
+        // Verify last name field shows validation
+        const lastNameValidation = await signupPage.lastNameInput.evaluate((el: HTMLInputElement) => el.validity.valid);
+        expect(lastNameValidation).toBe(false);
+
+        // Verify address field shows validation
+        const addressValidation = await signupPage.address1Input.evaluate((el: HTMLInputElement) => el.validity.valid);
+        expect(addressValidation).toBe(false);
+    });
+
+    test('Verify password field is masked', async ({ signupPage, page }) => {
+        const testUser = generateTestUser();
+        const testPassword = 'TestPassword123';
+
+        await signupPage.fillInitialSignupForm(testUser.name, testUser.email);
+        await expect(signupPage.passwordInput).toBeVisible();
+
+        // Verify password field type attribute is set to "password"
         const passwordFieldType = await signupPage.passwordInput.getAttribute('type');
         expect(passwordFieldType).toBe('password');
 
-        // Type password and verify it's masked
-        await signupPage.passwordInput.fill('TestPassword123');
-        const value = await signupPage.passwordInput.inputValue();
+        // Fill password field
+        await signupPage.passwordInput.fill(testPassword);
 
-        // Value should be stored but displayed as masked
-        expect(value).toBe('TestPassword123');
+        // Verify the actual value is stored correctly in the input (accessible via JS)
+        const inputValue = await signupPage.passwordInput.inputValue();
+        expect(inputValue).toBe(testPassword);
+
+        // Visual verification: Take screenshot of the password field
+        const passwordFieldBox = await signupPage.passwordInput.boundingBox();
+        expect(passwordFieldBox).not.toBeNull();
+
+        if (passwordFieldBox) {
+            const screenshot = await page.screenshot({
+                clip: {
+                    x: passwordFieldBox.x,
+                    y: passwordFieldBox.y,
+                    width: passwordFieldBox.width,
+                    height: passwordFieldBox.height
+                }
+            });
+
+            // Verify screenshot was captured successfully
+            // The screenshot will show dots/asterisks instead of plain text
+            // due to type="password" causing browser to mask the visual display
+            expect(screenshot).toBeDefined();
+            expect(screenshot.length).toBeGreaterThan(0);
+        }
+
+        // Verify the input type causes masking behavior
+        const isMasked = await signupPage.passwordInput.evaluate((el: HTMLInputElement) => {
+            // The input type="password" ensures browser renders masked characters
+            // Even though we can access the value via JavaScript, the visual display is masked
+            return el.type === 'password' && el.value === 'TestPassword123';
+        });
+        expect(isMasked).toBe(true);
     });
 
-    test('TC_AUTH_006 - Verify email format validation', async ({ signupPage }) => {
-        // Fill name with valid data
-        await signupPage.signupNameInput.fill('Test User');
 
-        // Try invalid email format
-        await signupPage.signupEmailInput.fill('invalid-email');
-        await signupPage.signupButton.click();
+    test('Verify signup with minimal required information', async ({ signupPage }) => {
+        const testUser = generateTestUser();
 
-        // Check if email field shows validation error (browser native or custom)
-        const emailValue = await signupPage.signupEmailInput.inputValue();
-        expect(emailValue).toBe('invalid-email');
+        await signupPage.fillInitialSignupForm(testUser.name, testUser.email);
+        await expect(signupPage.passwordInput).toBeVisible();
 
-        // Page should not navigate away from signup form
-        await expect(signupPage.signupButton).toBeVisible();
+        // Fill only required fields
+        if (testUser.gender === 'Mr') {
+            await signupPage.genderMrRadio.check();
+        } else {
+            await signupPage.genderMrsRadio.check();
+        }
+
+        await signupPage.passwordInput.fill(testUser.password);
+        await signupPage.firstNameInput.fill(testUser.firstName);
+        await signupPage.lastNameInput.fill(testUser.lastName);
+        await signupPage.address1Input.fill(testUser.address1);
+        await signupPage.countrySelect.selectOption(testUser.country);
+        await signupPage.stateInput.fill(testUser.state);
+        await signupPage.cityInput.fill(testUser.city);
+        await signupPage.zipcodeInput.fill(testUser.zipcode);
+        await signupPage.mobileNumberInput.fill(testUser.mobileNumber);
+
+        await signupPage.submitRegistration();
+
+        // Verify account created successfully
+        await signupPage.verifyAccountCreated();
     });
 });

@@ -26,6 +26,10 @@ export class HomePage extends BasePage {
   }
 
   // Page actions/methods
+  async goto() {
+    await super.goto(URLS.HOME);
+  }
+
   async navigateToHome() {
     await super.goto(URLS.HOME);
   }
@@ -34,7 +38,15 @@ export class HomePage extends BasePage {
     await this.click(this.signupLoginLink);
   }
 
+  async clickSignupLoginLink() {
+    await this.click(this.signupLoginLink);
+  }
+
   async clickProducts() {
+    await this.click(this.productsLink);
+  }
+
+  async clickProductsLink() {
     await this.click(this.productsLink);
   }
 
