@@ -2,8 +2,9 @@
 
 > Production-ready E2E test automation framework for [automationexercise.com](https://automationexercise.com) built with Playwright + TypeScript
 
-[![TypeScript](https://img.shields.io/badge/TypeScript-100%25-blue.svg)](https://www.typescriptlang.org/)
-[![Playwright](https://img.shields.io/badge/Playwright-E2E-green.svg)](https://playwright.dev/)
+![Playwright Tests](https://github.com/Pp1114/Playwright_Typescript_Project/actions/workflows/playwright.yml/badge.svg)
+[![TypeScript](https://img.shields.io/badge/TypeScript-100%25-blue.svg)]()
+[![Playwright](https://img.shields.io/badge/Playwright-E2E-green.svg)]()
 [![Tests](https://img.shields.io/badge/Tests-23%20passing-brightgreen.svg)]()
 
 ## 🎯 Overview
@@ -195,8 +196,19 @@ Running 23 tests using 8 workers
   ✓ Navigation to login
   ...
 
-23 passed (31.3s)
+23 passed (31.3s
 ```
+## 🤖 CI/CD Pipeline
+
+Automated testing with **GitHub Actions**:
+
+- ✅ Runs on every push to `main`
+- ✅ Cross-browser testing (Chrome, Firefox, Safari)
+- ✅ HTML reports with screenshots/videos
+- ✅ Test artifacts stored for 30 days
+
+**[View Test Runs →](https://github.com/Pp1114/Playwright_Typescript_Project/actions)**
+
 
 ## 🛠️ Technology Stack
 
