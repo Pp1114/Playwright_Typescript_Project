@@ -1,5 +1,6 @@
 import { test, expect } from '../../../fixtures/pageFixtures';
 import { generateTestUser } from '../../../utils/testDataGenerator';
+import { TEST_USERS } from '../../../utils/testUsers';
 
 /**
  * Signup Tests
@@ -46,24 +47,9 @@ test.describe('Signup Functionality', () => {
     });
 
     test('Verify signup fails with already registered email', async ({ signupPage, page }) => {
-        const testUser = generateTestUser();
-
-        // First, create the user
-        await signupPage.fillInitialSignupForm(testUser.name, testUser.email);
-        await expect(signupPage.passwordInput).toBeVisible();
-        await signupPage.fillRegistrationForm(testUser);
-        await signupPage.submitRegistration();
-        await signupPage.verifyAccountCreated();
-        await signupPage.clickContinue();
-
-        // Logout
-        const logoutLink = page.locator('a[href="/logout"]');
-        await logoutLink.click();
-        await page.waitForURL(/login/);
-
-        // Try to signup again with same email
+        // Try to signup with an existing user's email
         await signupPage.signupNameInput.fill('Another Name');
-        await signupPage.signupEmailInput.fill(testUser.email);
+        await signupPage.signupEmailInput.fill(TEST_USERS.EXISTING_USER.email);
         await signupPage.signupButton.click();
 
         // Verify error message
@@ -101,7 +87,7 @@ test.describe('Signup Functionality', () => {
         expect(addressValidation).toBe(false);
     });
 
-    test('Verify password field is masked', async ({ signupPage, page }) => {
+    test('Verify password field is masked', async ({ signupPage }) => {
         const testUser = generateTestUser();
         const testPassword = 'TestPassword123';
 
@@ -115,35 +101,13 @@ test.describe('Signup Functionality', () => {
         // Fill password field
         await signupPage.passwordInput.fill(testPassword);
 
-        // Verify the actual value is stored correctly in the input (accessible via JS)
+        // Verify the actual value is stored correctly (accessible via JS)
         const inputValue = await signupPage.passwordInput.inputValue();
         expect(inputValue).toBe(testPassword);
 
-        // Visual verification: Take screenshot of the password field
-        const passwordFieldBox = await signupPage.passwordInput.boundingBox();
-        expect(passwordFieldBox).not.toBeNull();
-
-        if (passwordFieldBox) {
-            const screenshot = await page.screenshot({
-                clip: {
-                    x: passwordFieldBox.x,
-                    y: passwordFieldBox.y,
-                    width: passwordFieldBox.width,
-                    height: passwordFieldBox.height
-                }
-            });
-
-            // Verify screenshot was captured successfully
-            // The screenshot will show dots/asterisks instead of plain text
-            // due to type="password" causing browser to mask the visual display
-            expect(screenshot).toBeDefined();
-            expect(screenshot.length).toBeGreaterThan(0);
-        }
-
-        // Verify the input type causes masking behavior
+        // Verify the input type="password" causes masking behavior
+        // The browser will visually mask the characters while the value is still accessible via JS
         const isMasked = await signupPage.passwordInput.evaluate((el: HTMLInputElement) => {
-            // The input type="password" ensures browser renders masked characters
-            // Even though we can access the value via JavaScript, the visual display is masked
             return el.type === 'password' && el.value === 'TestPassword123';
         });
         expect(isMasked).toBe(true);

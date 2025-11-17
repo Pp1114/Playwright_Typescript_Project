@@ -22,5 +22,12 @@ export const TEST_USERS = {
     INVALID_USER: {
         email: 'invalid@example.com',
         password: 'WrongPassword123'
+    },
+
+    // Existing user for duplicate email signup test
+    // This is the same as VALID_USER, used for testing duplicate email validation
+    EXISTING_USER: {
+        email: 'playwright.testuser@automationexercise.com',
+        name: 'Test User'
     }
 } as const;

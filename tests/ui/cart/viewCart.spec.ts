@@ -3,26 +3,26 @@ import { test, expect } from '../../../fixtures/pageFixtures';
 /**
  * View and Manage Cart Tests
  *
- * Tests for viewing cart contents and managing products in cart
- * Each test is independent and can run in isolation
+ * Tests for viewing cart contents and managing cart operations
+ * Tests assume products are already added to cart (done in beforeEach)
  */
 
 test.describe('View and Manage Cart', () => {
-    test.beforeEach(async ({ homePage, productsPage }) => {
-        await homePage.goto();
-        await homePage.clickProductsLink();
+    test.beforeEach(async ({ productsPage, page }) => {
+        // Navigate directly to products page (faster than home → products)
+        await productsPage.goto();
         await productsPage.waitForProductsToLoad();
-    });
 
-    test('Verify product details in cart (image, name, price, quantity)', async ({ productsPage, cartPage }) => {
-        // Add product to cart
+        // Add a product to cart
         await productsPage.addFirstProductToCart();
         await expect(productsPage.viewCartButton).toBeVisible();
-        await productsPage.goToCart();
 
-        // Verify cart page loaded
-        await cartPage.verifyCartPageLoaded();
+        // Navigate directly to cart (faster than clicking modal button)
+        await page.goto('https://automationexercise.com/view_cart');
+        await expect(page).toHaveURL(/view_cart/);
+    });
 
+    test('Verify product details in cart (image, name, price, quantity)', async ({ cartPage }) => {
         // Verify product details are visible
         await cartPage.verifyProductDetailsVisible();
 
@@ -33,15 +33,7 @@ test.describe('View and Manage Cart', () => {
         await expect(cartPage.productQuantities.first()).toBeVisible();
     });
 
-    test('Verify total price calculation is correct', async ({ productsPage, cartPage }) => {
-        // Add product to cart
-        await productsPage.addFirstProductToCart();
-        await expect(productsPage.viewCartButton).toBeVisible();
-        await productsPage.goToCart();
-
-        // Verify cart page loaded
-        await cartPage.verifyCartPageLoaded();
-
+    test('Verify total price calculation is correct', async ({ cartPage }) => {
         // Verify total price calculation
         const cartData = await cartPage.getCartData();
 
@@ -57,15 +49,7 @@ test.describe('View and Manage Cart', () => {
         expect(actualTotal).toBe(expectedTotal);
     });
 
-    test('Verify quantity is displayed correctly', async ({ productsPage, cartPage }) => {
-        // Add product to cart
-        await productsPage.addFirstProductToCart();
-        await expect(productsPage.viewCartButton).toBeVisible();
-        await productsPage.goToCart();
-
-        // Verify cart page loaded
-        await cartPage.verifyCartPageLoaded();
-
+    test('Verify quantity is displayed correctly', async ({ cartPage }) => {
         // Get quantity
         const quantity = await cartPage.getProductQuantity(0);
 
@@ -73,61 +57,27 @@ test.describe('View and Manage Cart', () => {
         expect(quantity).toBe(1);
     });
 
-    test('Verify product can be removed from cart', async ({ productsPage, cartPage }) => {
-        // Add product to cart
-        await productsPage.addFirstProductToCart();
-        await expect(productsPage.viewCartButton).toBeVisible();
-        await productsPage.goToCart();
-
-        // Verify cart has 1 item
-        await cartPage.verifyCartPageLoaded();
-        const initialCount = await cartPage.getCartItemCount();
-        expect(initialCount).toBe(1);
-
-        // Get product name before removing
-        const productNames = await cartPage.getProductNames();
-        const firstProductName = productNames[0];
-
-        // Remove the product
-        await cartPage.removeProduct(0);
-
-        // Wait for page to update
-        await cartPage.page.waitForTimeout(1000);
-
-        // Verify cart is now empty
-        const finalCount = await cartPage.getCartItemCount();
-        expect(finalCount).toBe(0);
-
-        // Verify the product is no longer in cart
-        const updatedProductNames = await cartPage.getProductNames();
-        const stillExists = updatedProductNames.some(name => name === firstProductName);
-        expect(stillExists).toBeFalsy();
-    });
-
-    test('Verify empty cart message when no items', async ({ cartPage }) => {
-        // Go directly to cart page without adding products
-        await cartPage.goto();
-
-        // Verify cart is empty
-        const isEmpty = await cartPage.isCartEmpty();
-        expect(isEmpty).toBeTruthy();
-
-        // Verify cart has 0 items
-        const itemCount = await cartPage.getCartItemCount();
-        expect(itemCount).toBe(0);
-    });
-
-    test('Verify Proceed to Checkout button is visible', async ({ productsPage, cartPage }) => {
-        // Add product to cart
-        await productsPage.addFirstProductToCart();
-        await expect(productsPage.viewCartButton).toBeVisible();
-        await productsPage.goToCart();
-
-        // Verify cart page loaded
-        await cartPage.verifyCartPageLoaded();
-
+    test('Verify Proceed to Checkout button is visible', async ({ cartPage }) => {
         // Verify checkout button is visible
         await cartPage.verifyCheckoutButtonVisible();
         await expect(cartPage.proceedToCheckoutButton).toBeVisible();
+    });
+
+    test('Verify removing product from cart and empty cart message', async ({ cartPage }) => {
+        // Verify cart has 1 item initially
+        let itemCount = await cartPage.getCartItemCount();
+        expect(itemCount).toBe(1);
+
+        // Remove the product from cart
+        await cartPage.removeProduct(0);
+
+        // Verify cart is now empty (0 items)
+        itemCount = await cartPage.getCartItemCount();
+        expect(itemCount).toBe(0);
+
+        // Get and verify the empty cart message text
+        const emptyMessage = await cartPage.getEmptyCartMessage();
+        console.log('Empty cart message:', emptyMessage);
+        expect(emptyMessage).toContain('Cart is empty!');
     });
 });

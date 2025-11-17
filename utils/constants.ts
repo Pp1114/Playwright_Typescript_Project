@@ -13,6 +13,9 @@ export const URLS = {
     CART: `${BASE_URL}/view_cart`,
     CONTACT: `${BASE_URL}/contact_us`,
     CHECKOUT: `${BASE_URL}/checkout`,
+    CATEGORY_WOMEN_DRESS: `${BASE_URL}/category_products/1`,
+    CATEGORY_MEN_TSHIRTS: `${BASE_URL}/category_products/3`,
+    CATEGORY_KIDS_DRESS: `${BASE_URL}/category_products/4`,
 } as const;
 
 // Timeout values (in milliseconds)

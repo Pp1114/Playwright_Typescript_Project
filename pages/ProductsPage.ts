@@ -252,14 +252,25 @@ export class ProductsPage extends BasePage {
      * @param subcategory - Subcategory name (e.g., 'Dress', 'Tops', 'Tshirts')
      */
     async clickSubcategory(category: 'Women' | 'Men' | 'Kids', subcategory: string) {
+        // Get category ID for specific targeting
+        const categoryId = category === 'Women' ? '#Women' :
+                          category === 'Men' ? '#Men' : '#Kids';
+
+        // Scroll to category section first to ensure visibility
+        const categoryLocator = category === 'Women' ? this.womenCategory :
+                                category === 'Men' ? this.menCategory : this.kidsCategory;
+        await categoryLocator.scrollIntoViewIfNeeded();
+
         // First expand the category
         await this.clickCategory(category);
 
         // Wait for subcategories to expand
         await this.page.waitForTimeout(500);
 
-        // Click the subcategory
-        await this.page.locator(`.panel-body a:has-text("${subcategory}")`).first().click();
+        // Click the specific subcategory within this category panel
+        const subcategoryLocator = this.page.locator(`${categoryId} .panel-body a:has-text("${subcategory}")`).first();
+        await subcategoryLocator.scrollIntoViewIfNeeded();
+        await subcategoryLocator.click();
     }
 
     /**

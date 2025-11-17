@@ -53,7 +53,7 @@ export class CartPage extends BasePage {
         this.proceedToCheckoutButton = page.locator('.check_out');
 
         // Empty state
-        this.emptyCartMessage = page.locator('text=/cart is empty/i, text=/empty cart/i, p:has-text("empty")').first();
+        this.emptyCartMessage = page.locator('#empty_cart');
 
         // Breadcrumb
         this.breadcrumb = page.locator('.breadcrumbs, ol.breadcrumb');
@@ -167,6 +167,18 @@ export class CartPage extends BasePage {
             return await this.emptyCartMessage.isVisible({ timeout: 3000 });
         } catch {
             return false;
+        }
+    }
+
+    /**
+     * Get empty cart message text
+     */
+    async getEmptyCartMessage(): Promise<string> {
+        try {
+            const message = await this.emptyCartMessage.textContent();
+            return message?.trim() || '';
+        } catch {
+            return '';
         }
     }
 

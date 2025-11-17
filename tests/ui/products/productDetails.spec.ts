@@ -6,7 +6,7 @@ test.describe('Product Details Tests', () => {
         await productsPage.goto();
     });
 
-    test('TC_PROD_006 - Verify product detail page opens on click', async ({ productsPage }) => {
+    test(' Verify product detail page opens on click', async ({ productsPage }) => {
         // Click first product's "View Product" button
         await productsPage.viewFirstProduct();
 
@@ -18,7 +18,7 @@ test.describe('Product Details Tests', () => {
         await expect(productInfo).toBeVisible();
     });
 
-    test('TC_PROD_010 - Verify Add to Cart button is functional', async ({ productsPage }) => {
+    test(' Verify Add to Cart button is functional', async ({ productsPage }) => {
         // Add first product to cart
         await productsPage.addFirstProductToCart();
 

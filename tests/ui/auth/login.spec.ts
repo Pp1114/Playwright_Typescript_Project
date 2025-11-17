@@ -13,17 +13,33 @@ test.describe('Login Functionality', () => {
         await loginPage.goto();
     });
 
-    test('Verify login with valid credentials', async ({ loginPage }) => {
-        
-          // Verify log in displays properl, key elements are present
+    test('Verify login with valid credentials, username display, and logout', async ({ loginPage, homePage, page }) => {
+        // Verify login form elements are present
         await loginPage.verifyLoginFormVisible();
         await expect(loginPage.emailInput).toBeVisible();
         await expect(loginPage.passwordInput).toBeVisible();
         await expect(loginPage.loginButton).toBeVisible();
 
+        // Verify logout is not visible before login
+        await expect(homePage.logoutLink).not.toBeVisible();
+
+        // Perform login
         await loginPage.login(TEST_USERS.VALID_USER.email, TEST_USERS.VALID_USER.password);
 
+        // Verify successful login with username
         await loginPage.verifySuccessfulLogin(TEST_USERS.VALID_USER.name);
+
+        // Verify logged in text appears with correct username
+        await expect(homePage.loggedInAsText).toBeVisible();
+        await expect(homePage.loggedInAsText).toContainText(TEST_USERS.VALID_USER.name);
+
+        // Verify logout button is now visible
+        await expect(homePage.logoutLink).toBeVisible();
+
+        // Test logout functionality and Verify redirected to login page
+        await homePage.clickLogout();
+        await expect(page).toHaveURL(/login/);
+        await loginPage.verifyLoginFormVisible();
     });
 
     test('Verify login fails with invalid email and password', async ({ loginPage }) => {
@@ -40,38 +56,6 @@ test.describe('Login Functionality', () => {
         await loginPage.login(TEST_USERS.VALID_USER.email, 'WrongPassword123');
 
         await loginPage.verifyErrorMessage('Your email or password is incorrect');
-    });
-
-    test('Verify successful login shows logged in username', async ({ loginPage, homePage }) => {
-        await loginPage.login(TEST_USERS.VALID_USER.email, TEST_USERS.VALID_USER.password);
-
-        // Verify logged in text appears
-        await expect(homePage.loggedInAsText).toBeVisible();
-        await expect(homePage.loggedInAsText).toContainText(TEST_USERS.VALID_USER.name);
-    });
-
-    test('Verify logout button visible only when logged in', async ({ loginPage, homePage }) => {
-        // When not logged in, logout should not be visible
-        await expect(homePage.logoutLink).not.toBeVisible();
-
-        // Login
-        await loginPage.login(TEST_USERS.VALID_USER.email, TEST_USERS.VALID_USER.password);
-
-        // Now logout should be visible
-        await expect(homePage.logoutLink).toBeVisible();
-    });
-
-     test('Verify logout functionality', async ({ loginPage, homePage, page }) => {
-        // Login first
-        await loginPage.login(TEST_USERS.VALID_USER.email, TEST_USERS.VALID_USER.password);
-        await loginPage.verifySuccessfulLogin();
-
-        // Logout
-        await homePage.clickLogout();
-
-        // Verify redirected to login page
-        await expect(page).toHaveURL(/login/);
-        await loginPage.verifyLoginFormVisible();
     });
 
     
